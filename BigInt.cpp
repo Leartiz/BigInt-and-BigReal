@@ -148,7 +148,10 @@ bool BigInt::is_neg() const
 
 bool BigInt::is_zero() const
 {
-	return b_num_vec.size() == 1 && b_num_vec[0] == 0;
+	for (const auto& val : b_num_vec)
+		if (val != static_cast<std::int8_t>(0))
+			return false;
+	return true;
 }
 
 void BigInt::reverse_neg()
@@ -616,8 +619,10 @@ const BigInt BigInt::operator/(const BigInt& r_val_) const
 	BigInt cp_r_val(r_val_);
 	cp_l_val.b_is_neg = false;
 	cp_r_val.b_is_neg = false;
-	if (cp_l_val < cp_r_val || r_val_ == 0) // division by zero, private case
-		return BigInt();
+	if (r_val_.is_zero()) // division by zero
+		return BigInt(); // ret zero
+	if (cp_l_val < cp_r_val) // private case
+		return BigInt(); 
 	cp_r_val = division(std::move(cp_l_val), std::move(cp_r_val));
 	if (is_neg_l == is_neg_r)
 	{
@@ -692,10 +697,10 @@ const BigInt BigInt::operator%(const BigInt& r_val_) const
 	BigInt cp_r_val(r_val_);
 	cp_l_val.b_is_neg = false;
 	cp_r_val.b_is_neg = false;
-	if (cp_r_val == 0) // division by zero
-		return BigInt();
+	if (cp_r_val == 0) // remainder of division by zero
+		return BigInt(); // ret zero
 	if (cp_l_val < cp_r_val)
-		return cp_l_val; // zero
+		return cp_l_val;
 	cp_r_val = modulo_division(std::move(cp_l_val), std::move(cp_r_val));
 	if (!is_neg_l)
 	{
@@ -1308,11 +1313,6 @@ BigInt BigInt::to_big_int(std::int32_t val_)
 {
 	BigInt bi;
 	auto str = std::to_string(val_);
-	if (str.at(0) == '-')
-	{
-		bi.b_is_neg = true;
-		str.erase(str.begin());
-	}
 	to_big_int(bi, str);
 	return bi;
 }
@@ -1329,11 +1329,6 @@ BigInt BigInt::to_big_int(std::int64_t val_)
 {
 	BigInt bi;
 	auto str = std::to_string(val_);
-	if (str.at(0) == '-')
-	{
-		bi.b_is_neg = true;
-		str.erase(str.begin());
-	}
 	to_big_int(bi, str);
 	return bi;
 }
@@ -1365,7 +1360,7 @@ void BigInt::to_big_int(BigInt& bi_, const std::string& str_) // without check
 	std::size_t offset = 0U;
 	if (*it == '-')
 	{
-		bi_.set_neg();
+		bi_.b_is_neg = true; // direct
 		offset = 1U;
 		++it;
 	}
