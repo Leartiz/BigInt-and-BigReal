@@ -9,14 +9,14 @@
 #include <vector>
 #include <string>
 
-#include "BigInt.h"
-
 
 namespace lez
 {
-	// start_amount_digits_after_comma() edit for all class
+	class BigInt; // forward declaration
 
+	// start_amount_digits_after_comma() edit for all class
 	// division by zero is zero!
+
 	class BigReal
 	{
 	public:
@@ -329,6 +329,8 @@ namespace lez
 		static BigReal to_big_real(const BigInt& val_);
 		static BigReal to_big_real(float val_);
 		static BigReal to_big_real(double val_);
+		static BigReal to_big_real(const std::string& str_);
+		static void to_big_real(BigReal &br_, const std::string& str_); // full
 
 		static void swap(BigReal& l_val_, BigReal& r_val_);
 		static std::size_t& start_amount_digits_after_comma(); // lval, for all class, singleton?
@@ -350,8 +352,6 @@ namespace lez
 		static void remove_end_zeros(std::string& str_);
 		static void remove_end_zeros_from_fractional_part(BigReal& val_);
 
-		static BigReal to_big_real(const std::string& str_);
-		static void to_big_real(BigReal &br_, const std::string& str_); // full
 		static void to_big_real_whole_part(BigReal &br_, std::string str_); // edit whole part
 		static void to_big_real_fractional_part(BigReal &br_, std::string str_); // edit fractional part
 		static BigReal to_big_real_from_big_int(const BigInt& wp_val_, const BigInt& fp_val_); // only positive
