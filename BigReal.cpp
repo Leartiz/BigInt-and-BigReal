@@ -11,6 +11,7 @@
 #include <algorithm>
 
 #include "BigReal.h"
+#include "BigInt.h"
 
 
 namespace lez
@@ -880,10 +881,8 @@ const BigReal BigReal::operator/(const BigReal& r_val_) const
 
 	BigInt l_val = BigInt::to_big_int(l_val_str);
 	BigInt r_val = BigInt::to_big_int(r_val_str);
-	BigInt res_wp = l_val / r_val; // whole
-
-	BigInt rem_of_div = l_val % r_val;
-	std::string rem_of_div_str = rem_of_div.to_string();
+	BigInt res_wp = l_val / r_val; // whole part, division by zero is zero
+	BigInt rem_of_div = l_val % r_val; // division by zero is zero
 	
 	std::size_t counter_am_dig_after_com = 0U;
 	std::size_t max_am_dig_after_com = std::max(b_am_dig_after_com, r_val_.b_am_dig_after_com);
@@ -959,11 +958,11 @@ const BigReal BigReal::operator%(double r_val_) const
 
 const BigReal BigReal::operator%(const BigReal& r_val_) const
 {
-	BigReal gen_res = operator/(r_val_); // if r_val_ is neg, then ge_res will be neg
+	BigReal gen_res = operator/(r_val_); // if r_val_ is neg, then ge_res will be neg, division by zero is zero
 	gen_res.b_whole_part.clear();
 	gen_res.b_whole_part.push_back(static_cast<std::int8_t>(0)); // set zero
 	gen_res *= r_val_; // close to the remainder...
-	return gen_res;
+	return gen_res; // nrvo
 }
 
 
@@ -1954,23 +1953,16 @@ BigReal BigReal::read_big_real(const std::string& str_, std::size_t st_p_)
 			break;
 	if (st_p_ == last_digit_wp_p && str_[last_digit_wp_p] != '.')
 		return br; // default
-	if (str_[last_digit_wp_p] != '.') // st_p_ != last_digit_p, only whole
+	if (st_p_ != last_digit_wp_p) // str_[last_digit_p] == '.' || str_[last_digit_p] != '.'
 	{
 		br.b_whole_part.clear();
 		br.b_whole_part.reserve(last_digit_wp_p - st_p_ + 1U);
 		for (std::size_t i = st_p_; i < last_digit_wp_p; ++i)
 			br.b_whole_part.push_back(static_cast<std::int8_t>(str_[i] - '0'));
 		remove_leading_zeros_from_whole_part(br); // ref
-		return br;
 	}
-	if (st_p_ != last_digit_wp_p) // str_[last_digit_p] == '.'
-	{
-		br.b_whole_part.clear();
-		br.b_whole_part.reserve(last_digit_wp_p - st_p_ + 1U);
-		for (std::size_t i = st_p_; i < last_digit_wp_p; ++i)
-			br.b_whole_part.push_back(static_cast<std::int8_t>(str_[i] - '0'));
-		remove_leading_zeros_from_whole_part(br);
-	}
+	if (str_[last_digit_wp_p] != '.') // st_p_ != last_digit_p (up), only whole
+		return br; 
 	// st_p_ == last_digit_p
 	++last_digit_wp_p; // skip comma
 	std::size_t last_digit_fp_p = last_digit_wp_p;
@@ -2046,7 +2038,7 @@ std::string BigReal::to_string_unsigned_whole_part() const
 std::string BigReal::to_string_fractional_part() const
 {
 	std::stringstream ss;
-	for (std::size_t i = 0;  i < b_am_dig_after_com && i < b_fractional_part.size(); ++i)
+	for (std::size_t i = 0; i < b_fractional_part.size(); ++i)
 		ss << static_cast<std::int32_t>(b_fractional_part[i]);
 	return ss.str();
 }
